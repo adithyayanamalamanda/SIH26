@@ -19,6 +19,8 @@ test('difficulty recommendations respect level boundaries', () => {
 test('voice commands map natural navigation phrases to app views', () => {
   assert.equal(parseVoiceCommand('open my progress'), 'progress')
   assert.equal(parseVoiceCommand('start the attention game'), 'attention')
+  assert.equal(parseVoiceCommand('please take me to my reminders'), 'reminders')
+  assert.equal(parseVoiceCommand('what can I say'), 'voice assistant')
   assert.equal(parseVoiceCommand('go back'), 'back')
   assert.equal(parseVoiceCommand('something else'), null)
 })

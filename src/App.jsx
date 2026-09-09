@@ -46,6 +46,7 @@ function CaregiverDashboard() {
 
 function VoiceNavigator({ language, isCaregiver, onCommand }) {
   const [status, setStatus] = useState('Voice navigation ready')
+  const [isListening, setIsListening] = useState(false)
   const voiceLanguage = dateLocales[language] || dateLocales.English
   const speak = (text) => {
     if (!('speechSynthesis' in window)) return
@@ -57,7 +58,7 @@ function VoiceNavigator({ language, isCaregiver, onCommand }) {
   const listen = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      const message = 'Voice commands are not supported in this browser.'
+      const message = 'Voice commands need Chrome or Edge.'
       setStatus(message)
       speak(message)
       return
@@ -66,7 +67,7 @@ function VoiceNavigator({ language, isCaregiver, onCommand }) {
     recognition.lang = voiceLanguage
     recognition.interimResults = false
     recognition.maxAlternatives = 1
-    recognition.onstart = () => setStatus('Listening for a command...')
+    recognition.onstart = () => { setIsListening(true); setStatus('Listening...') }
     recognition.onresult = ({ results }) => {
       const transcript = results[0][0].transcript
       const action = parseVoiceCommand(transcript)
@@ -77,19 +78,21 @@ function VoiceNavigator({ language, isCaregiver, onCommand }) {
         return
       }
       onCommand(action)
-      const message = action === 'back' ? 'Going back.' : `Opening ${action}.`
-      setStatus(`Heard: ${transcript}`)
+      const responses = { home: 'Taking you home.', games: 'Starting memory training.', attention: 'Starting attention training.', reminders: 'Opening your reminder list.', progress: 'Opening your progress.', dashboard: 'Opening the caregiver dashboard.', 'patient progress': 'Opening patient progress.', alerts: 'Opening alerts.', caregiver: 'Switching to caregiver view.', elderly: 'Switching to elderly view.', back: 'Going back.', 'voice assistant': voiceCommandHelp(isCaregiver) }
+      const message = responses[action] || `Opening ${action}.`
+      setStatus(message)
       speak(message)
     }
     recognition.onerror = () => {
+      setIsListening(false)
       const message = 'I could not hear that. Press the microphone and try again.'
       setStatus(message)
       speak(message)
     }
-    recognition.onend = () => setStatus((current) => current === 'Listening for a command...' ? 'Voice navigation ready' : current)
+    recognition.onend = () => { setIsListening(false); setStatus((current) => current === 'Listening...' ? 'Voice navigation ready' : current) }
     recognition.start()
   }
-  return <div className="voice-control"><button className="voice-control-button" onClick={listen} aria-label="Listen for a voice command" title="Voice command">⌕</button><span aria-live="polite">{status}</span></div>
+  return <div className="voice-control"><button className={`voice-control-button ${isListening ? 'listening' : ''}`} onClick={listen} disabled={isListening} aria-label={isListening ? 'Listening for a voice command' : 'Listen for a voice command'} title="Voice command"><span aria-hidden="true">🎙</span></button><span aria-live="polite">{status}</span></div>
 }
 
 function App() {

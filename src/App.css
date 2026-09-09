@@ -1,7 +1,10 @@
-.voice-control { display: inline-flex; align-items: center; gap: 7px; }
-.voice-control-button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; color: var(--sage-dark); background: var(--white); cursor: pointer; font-size: 1.1rem; }
-.voice-control-button:hover, .voice-control-button:focus-visible { background: var(--sage-soft); outline: 2px solid var(--sage); outline-offset: 2px; }
-.voice-control span { max-width: 220px; color: var(--muted); font-size: .72rem; }
+.voice-control { display: inline-flex; align-items: center; gap: 9px; }
+.voice-control-button { display: grid; place-items: center; width: 50px; height: 50px; border: 2px solid var(--sage); border-radius: 50%; color: var(--sage-dark); background: var(--white); cursor: pointer; font-size: 1.35rem; box-shadow: 0 3px 10px rgba(46, 69, 59, .12); transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+.voice-control-button:hover, .voice-control-button:focus-visible { background: var(--sage-soft); outline: 3px solid rgba(85,121,107,.25); outline-offset: 3px; transform: scale(1.05); }
+.voice-control-button.listening { color: var(--white); background: var(--coral); border-color: var(--coral); box-shadow: 0 0 0 7px rgba(201,103,75,.18); animation: voice-pulse 1.2s ease-in-out infinite; }
+.voice-control-button:disabled { cursor: wait; }
+.voice-control span { max-width: 240px; color: var(--muted); font-size: .75rem; }
+@keyframes voice-pulse { 50% { box-shadow: 0 0 0 12px rgba(201,103,75,.08); } }
 * { box-sizing: border-box; }
 button { font: inherit; cursor: pointer; }
 .welcome-shell { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); background: var(--paper); }
