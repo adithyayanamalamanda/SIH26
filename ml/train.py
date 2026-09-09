@@ -14,7 +14,21 @@ TARGET = "nextDifficulty"
 
 def load_rows(path: Path):
     with path.open(newline="", encoding="utf-8") as file:
-        return list(csv.DictReader(file))
+        rows = list(csv.DictReader(file))
+    required = set(FEATURES + [TARGET])
+    missing = required.difference(rows[0].keys() if rows else set())
+    if missing:
+        raise SystemExit(f"Dataset is missing required columns: {', '.join(sorted(missing))}.")
+    for index, row in enumerate(rows, start=2):
+        try:
+            for name in FEATURES:
+                value = float(row[name])
+                if not 0 <= value <= 100 and name in {"accuracy", "previousScore", "recentAverage"}:
+                    raise ValueError
+            int(row[TARGET])
+        except (TypeError, ValueError):
+            raise SystemExit(f"Invalid numeric value in dataset row {index}.")
+    return rows
 
 
 def main():
@@ -31,6 +45,12 @@ def main():
         import joblib
     except ImportError as error:
         raise SystemExit("Install scikit-learn and joblib to train the optional model.") from error
+
+    target_counts = {}
+    for row in rows:
+        target_counts[row[TARGET]] = target_counts.get(row[TARGET], 0) + 1
+    if len(target_counts) < 2 or min(target_counts.values()) < 2:
+        raise SystemExit("At least two difficulty classes with two samples each are required for stratified training.")
 
     x = [[float(row[name]) for name in FEATURES] for row in rows]
     y = [int(row[TARGET]) for row in rows]

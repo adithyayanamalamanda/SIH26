@@ -20,11 +20,17 @@ export function recommendDifficulty({ score, currentLevel = 1, maxLevel = 4 }) {
 }
 
 export function calculatePerformance({ correct = 0, incorrect = 0, total = 0, responseTime = 30, timeLimit = 30, completed = true }) {
-  const effectiveCorrect = Math.max(0, correct - incorrect)
-  const accuracy = total > 0 ? effectiveCorrect / total : 0
+  const safeTotal = Number.isFinite(total) && total > 0 ? total : 0
+  const safeCorrect = Number.isFinite(correct) ? Math.max(0, Math.min(correct, safeTotal)) : 0
   const safeResponseTime = Number.isFinite(responseTime) ? Math.max(0, responseTime) : timeLimit
-  const speed = Math.max(0, Math.min(1, 1 - safeResponseTime / timeLimit))
+  const safeTimeLimit = Number.isFinite(timeLimit) && timeLimit > 0 ? timeLimit : 30
+  const accuracy = safeTotal > 0 ? safeCorrect / safeTotal : 0
+  const speed = Math.max(0, Math.min(1, 1 - safeResponseTime / safeTimeLimit))
   const completion = completed ? 1 : 0
-  const score = Math.round((accuracy * SCORE_WEIGHTS.accuracy + speed * SCORE_WEIGHTS.speed + completion * SCORE_WEIGHTS.completion) * 100)
-  return { accuracy: Math.round(accuracy * 100), score: Math.max(0, Math.min(100, score)) }
+  const score = Math.round((accuracy * SCORE_WEIGHTS.accuracy + speed * SCORE_WEIGHTS.speed + completion * SCORE_WEIGHTS.completion + Number.EPSILON) * 100)
+  return {
+    accuracy: Math.round(accuracy * 100),
+    incorrect: Number.isFinite(incorrect) ? Math.max(0, incorrect) : 0,
+    score: Math.max(0, Math.min(100, score)),
+  }
 }

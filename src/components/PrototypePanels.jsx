@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { readGameSessions, readReminders, saveReminders } from '../lib/storage'
 
 const starterReminders = [
@@ -10,16 +10,20 @@ const starterReminders = [
 export function RemindersView() {
   const [reminders, setReminders] = useState(() => readReminders(starterReminders))
   const [draft, setDraft] = useState({ type: 'Activity', text: '', time: '' })
-  useEffect(() => { saveReminders(reminders) }, [reminders])
-  const toggle = (id) => setReminders((items) => items.map((item) => item.id === id ? { ...item, done: !item.done } : item))
-  const remove = (id) => setReminders((items) => items.filter((item) => item.id !== id))
+  const [saveError, setSaveError] = useState(false)
+  const persist = (nextReminders) => {
+    setSaveError(!saveReminders(nextReminders))
+    setReminders(nextReminders)
+  }
+  const toggle = (id) => persist(reminders.map((item) => item.id === id ? { ...item, done: !item.done } : item))
+  const remove = (id) => persist(reminders.filter((item) => item.id !== id))
   const add = (event) => {
     event.preventDefault()
-    if (!draft.text.trim() || !draft.time.trim()) return
-    setReminders((items) => [...items, { ...draft, id: Date.now(), done: false }])
+    if (!draft.text.trim() || !draft.time) return
+    persist([...reminders, { ...draft, id: Date.now(), done: false }])
     setDraft({ type: 'Activity', text: '', time: '' })
   }
-  return <section className="panel-view"><p className="eyebrow">Daily support</p><h2>Today&apos;s reminders</h2><p className="panel-intro">A few gentle prompts to help your day feel steady.</p><div className="reminder-list">{reminders.map((item) => <div className={`reminder-row ${item.done ? 'done' : ''}`} key={item.id}><button className="reminder-toggle" onClick={() => toggle(item.id)} aria-label={`${item.done ? 'Mark incomplete' : 'Mark complete'}: ${item.text}`}><span className="reminder-check">{item.done ? '✓' : '○'}</span></button><span><small>{item.type}</small><strong>{item.text}</strong></span><time>{item.time}</time><button className="remove-reminder" onClick={() => remove(item.id)} aria-label={`Remove ${item.text}`}>×</button></div>)}</div><form className="reminder-form" onSubmit={add}><select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} aria-label="Reminder type"><option>Medicine</option><option>Hydration</option><option>Activity</option><option>Appointment</option></select><input value={draft.text} onChange={(event) => setDraft({ ...draft, text: event.target.value })} placeholder="Reminder" aria-label="Reminder text" /><input value={draft.time} onChange={(event) => setDraft({ ...draft, time: event.target.value })} placeholder="Time" aria-label="Reminder time" /><button className="secondary-action" type="submit">Add reminder</button></form><p className="local-note">Reminders are saved on this device.</p></section>
+  return <section className="panel-view"><p className="eyebrow">Daily support</p><h2>Today&apos;s reminder list</h2><p className="panel-intro">A few gentle prompts to help your day feel steady. These are saved locally; they do not send notifications.</p><div className="reminder-list">{reminders.map((item) => <div className={`reminder-row ${item.done ? 'done' : ''}`} key={item.id}><button className="reminder-toggle" onClick={() => toggle(item.id)} aria-label={`${item.done ? 'Mark incomplete' : 'Mark complete'}: ${item.text}`}><span className="reminder-check">{item.done ? '✓' : '○'}</span></button><span><small>{item.type}</small><strong>{item.text}</strong></span><time>{item.time}</time><button className="remove-reminder" onClick={() => remove(item.id)} aria-label={`Remove ${item.text}`}>×</button></div>)}</div><form className="reminder-form" onSubmit={add}><select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} aria-label="Reminder type"><option>Medicine</option><option>Hydration</option><option>Activity</option><option>Appointment</option></select><input value={draft.text} onChange={(event) => setDraft({ ...draft, text: event.target.value })} placeholder="Reminder" aria-label="Reminder text" /><input type="time" value={draft.time} onChange={(event) => setDraft({ ...draft, time: event.target.value })} aria-label="Reminder time" /><button className="secondary-action" type="submit">Add reminder</button></form><p className={`local-note ${saveError ? 'save-error' : ''}`}>{saveError ? 'This reminder could not be saved on this browser.' : 'Reminder list saved on this device.'}</p></section>
 }
 
 function MetricSummary({ sessions }) {
@@ -44,14 +48,21 @@ export function CaregiverProgress() {
   return <section className="panel-view"><p className="eyebrow">Caregiver view · Demo data</p><h2>Ramesh&apos;s progress</h2><p className="panel-intro">A clear view of recent cognitive game activity. These indicators are not a diagnosis.</p><MetricSummary sessions={sessions} />{declining && <div className="alert-box"><span>!</span><div><strong>Supportive reminder</strong><p>Recent game performance has declined. Consider checking in with Ramesh.</p></div></div>}<div className="trend-card"><div className="trend-heading"><strong>Recent performance</strong><span>{declining ? 'Needs attention' : 'No concerning trend'}</span></div>{values.length ? <TrendBars values={values} /> : <p className="empty-state">No game sessions have been recorded yet.</p>}</div></section>
 }
 
-export function VoiceView({ onStartGame, onShowProgress }) {
+export function VoiceView({ onStartGame, onShowProgress, language = 'English' }) {
   const [message, setMessage] = useState('Press the microphone and say what you need.')
-  const speak = (text) => { if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)) }
+  const voiceLanguage = { English: 'en-IN', Hindi: 'hi-IN', Telugu: 'te-IN', Assamese: 'as-IN' }[language] || 'en-IN'
+  const speak = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = voiceLanguage
+      window.speechSynthesis.speak(utterance)
+    }
+  }
   const listen = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) { setMessage('Voice recognition is not available here. Please use the buttons in the app.'); return }
     const recognition = new SpeechRecognition()
-    recognition.lang = 'en-IN'
+    recognition.lang = voiceLanguage
     recognition.onresult = ({ results }) => {
       const text = results[0][0].transcript.toLowerCase()
       if (text.includes('game')) { setMessage('Starting your memory game.'); speak('Starting your memory game.'); onStartGame() }
