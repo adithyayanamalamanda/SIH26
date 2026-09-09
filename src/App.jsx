@@ -3,6 +3,7 @@ import AttentionGame from './components/AttentionGame'
 import MemoryGame from './components/MemoryGame'
 import { CaregiverProgress, ProgressView, RemindersView, VoiceView } from './components/PrototypePanels'
 import { readGameSessions, saveSyncStatus, subscribeToStorageChanges } from './lib/storage'
+import { parseVoiceCommand, voiceCommandHelp } from './lib/voiceCommands'
 import './App.css'
 
 const dateLocales = {
@@ -41,6 +42,54 @@ function CaregiverDashboard() {
   const latest = sessions.at(-1)
 
   return <div className="dashboard-grid"><article className="info-card large-card"><p className="card-label">Demo patient overview</p><h3>Ramesh Kumar</h3><p>{latest ? `Last game played ${new Date(latest.timestamp).toLocaleDateString('en-IN')}` : 'No game sessions have been recorded yet.'}</p></article><article className="info-card"><p className="card-label">Today&apos;s game activity</p><strong className="metric">{todaySessions.length}</strong><p>{todaySessions.length === 1 ? 'game recorded today' : 'games recorded today'}</p></article><article className="info-card"><p className="card-label">Latest game performance</p><strong className="metric">{latest?.performanceScore ?? '—'}{latest && <span>/100</span>}</strong><p className={latest ? 'positive-copy' : ''}>{latest ? `${latest.gameType === 'attention' ? 'Attention' : 'Memory'} training` : 'Complete a game to see a score'}</p></article></div>
+}
+
+function VoiceNavigator({ language, isCaregiver, onCommand }) {
+  const [status, setStatus] = useState('Voice navigation ready')
+  const voiceLanguage = dateLocales[language] || dateLocales.English
+  const speak = (text) => {
+    if (!('speechSynthesis' in window)) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = voiceLanguage
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  }
+  const listen = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      const message = 'Voice commands are not supported in this browser.'
+      setStatus(message)
+      speak(message)
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = voiceLanguage
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onstart = () => setStatus('Listening for a command...')
+    recognition.onresult = ({ results }) => {
+      const transcript = results[0][0].transcript
+      const action = parseVoiceCommand(transcript)
+      if (!action) {
+        const message = `I heard “${transcript}”. ${voiceCommandHelp(isCaregiver)}`
+        setStatus(message)
+        speak(message)
+        return
+      }
+      onCommand(action)
+      const message = action === 'back' ? 'Going back.' : `Opening ${action}.`
+      setStatus(`Heard: ${transcript}`)
+      speak(message)
+    }
+    recognition.onerror = () => {
+      const message = 'I could not hear that. Press the microphone and try again.'
+      setStatus(message)
+      speak(message)
+    }
+    recognition.onend = () => setStatus((current) => current === 'Listening for a command...' ? 'Voice navigation ready' : current)
+    recognition.start()
+  }
+  return <div className="voice-control"><button className="voice-control-button" onClick={listen} aria-label="Listen for a voice command" title="Voice command">⌕</button><span aria-live="polite">{status}</span></div>
 }
 
 function App() {
@@ -87,6 +136,30 @@ function App() {
     setActiveView(nextMode === 'caregiver' ? 'dashboard' : 'home')
   }
 
+  const handleVoiceCommand = (action) => {
+    if (action === 'elderly' || action === 'caregiver') {
+      enterMode(action)
+      return
+    }
+    if (mode === 'welcome') {
+      setMode('elderly')
+      setActiveView(action === 'dashboard' ? 'home' : action)
+      return
+    }
+    if (action === 'back') {
+      setActiveView(isCaregiver ? 'dashboard' : 'home')
+      return
+    }
+    const caregiverOnly = ['dashboard', 'patient progress', 'alerts']
+    if (caregiverOnly.includes(action) && !isCaregiver) {
+      enterMode('caregiver')
+      setActiveView(action)
+      return
+    }
+    if (action === 'dashboard' && isCaregiver) setActiveView('dashboard')
+    else setActiveView(action)
+  }
+
   if (mode === 'welcome') {
     return (
       <main className="welcome-shell">
@@ -99,6 +172,7 @@ function App() {
             <button className="entry-button primary" onClick={() => enterMode('elderly')}><span className="button-symbol" aria-hidden="true">+</span><span><strong>Elderly User</strong><small>Start today&apos;s activities</small></span></button>
             <button className="entry-button secondary" onClick={() => enterMode('caregiver')}><span className="button-symbol" aria-hidden="true">↗</span><span><strong>Caregiver</strong><small>View demo progress and support</small></span></button>
           </div>
+          <VoiceNavigator language={dateLanguage} isCaregiver={false} onCommand={handleVoiceCommand} />
           <p className="safety-note">For cognitive engagement only. MindCare is not a medical diagnosis tool.</p>
         </section>
         <aside className="welcome-aside" aria-label="MindCare highlights"><div className="aside-stamp">TODAY</div><div className="aside-illustration" aria-hidden="true"><span className="illustration-sun">✦</span><span className="illustration-leaf leaf-one">⌁</span><span className="illustration-leaf leaf-two">⌁</span></div><p className="aside-kicker">Small steps count</p><h2>A little practice can make today feel brighter.</h2><div className="aside-rule" /><p>Simple activities, clear instructions, and a pace that responds to you.</p></aside>
@@ -127,7 +201,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <button className="wordmark" onClick={() => { setMode('welcome'); setActiveView('home') }}><span className="wordmark-mark">MC</span><span>MindCare</span></button>
-        <div className="topbar-meta" aria-live="polite"><span className={`status-dot ${isOnline ? '' : 'offline'}`} /><span>{connectionMessage || (isOnline ? 'Online · saved only in this browser' : 'Offline · saved only in this browser')}</span><select className="language-select" value={dateLanguage} onChange={(event) => setDateLanguage(event.target.value)} aria-label="Choose date format language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Assamese</option></select><button className="switch-link" onClick={() => enterMode(isCaregiver ? 'elderly' : 'caregiver')}>Switch to {isCaregiver ? 'elderly view' : 'caregiver view'}</button></div>
+        <div className="topbar-meta" aria-live="polite"><span className={`status-dot ${isOnline ? '' : 'offline'}`} /><span>{connectionMessage || (isOnline ? 'Online · saved only in this browser' : 'Offline · saved only in this browser')}</span><VoiceNavigator language={dateLanguage} isCaregiver={isCaregiver} onCommand={handleVoiceCommand} /><select className="language-select" value={dateLanguage} onChange={(event) => setDateLanguage(event.target.value)} aria-label="Choose date format language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Assamese</option></select><button className="switch-link" onClick={() => enterMode(isCaregiver ? 'elderly' : 'caregiver')}>Switch to {isCaregiver ? 'elderly view' : 'caregiver view'}</button></div>
       </header>
       <div className="app-layout">
         <nav className="side-nav" aria-label="Main navigation"><p className="nav-label">{isCaregiver ? 'Care team · demo' : 'My day'}</p>{navItems.map((item) => <button aria-current={activeView === item.view ? 'page' : undefined} className={`nav-item ${activeView === item.view ? 'active' : ''}`} key={item.view} onClick={() => setActiveView(item.view)}><span className="nav-icon" aria-hidden="true">{item.icon}</span>{item.label}</button>)}<div className="nav-footer"><p>Need a little help?</p><button className="help-button" onClick={() => setActiveView('voice assistant')}>Speak with MindCare</button></div></nav>

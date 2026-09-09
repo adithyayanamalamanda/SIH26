@@ -1,3 +1,7 @@
+.voice-control { display: inline-flex; align-items: center; gap: 7px; }
+.voice-control-button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; color: var(--sage-dark); background: var(--white); cursor: pointer; font-size: 1.1rem; }
+.voice-control-button:hover, .voice-control-button:focus-visible { background: var(--sage-soft); outline: 2px solid var(--sage); outline-offset: 2px; }
+.voice-control span { max-width: 220px; color: var(--muted); font-size: .72rem; }
 * { box-sizing: border-box; }
 button { font: inherit; cursor: pointer; }
 .welcome-shell { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); background: var(--paper); }
