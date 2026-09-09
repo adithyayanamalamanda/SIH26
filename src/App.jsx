@@ -4,6 +4,7 @@ import MemoryGame from './components/MemoryGame'
 import { CaregiverProgress, ProgressView, RemindersView, VoiceView } from './components/PrototypePanels'
 import { readGameSessions, saveSyncStatus, subscribeToStorageChanges } from './lib/storage'
 import { parseVoiceCommand, voiceCommandHelp } from './lib/voiceCommands'
+import logo from './assets/mindcare-logo.jpg'
 import './App.css'
 
 const dateLocales = {
@@ -167,7 +168,7 @@ function App() {
     return (
       <main className="welcome-shell">
         <section className="welcome-panel" aria-labelledby="welcome-title">
-          <div className="brand-mark" aria-hidden="true">MC</div>
+          <img className="brand-mark" src={logo} alt="MindCare logo" />
           <p className="eyebrow">A calmer way to keep the mind active</p>
           <h1 id="welcome-title">MindCare</h1>
           <p className="welcome-copy">Gentle memory exercises and daily support, designed for older adults and the people who care for them.</p>
@@ -203,7 +204,7 @@ function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <button className="wordmark" onClick={() => { setMode('welcome'); setActiveView('home') }}><span className="wordmark-mark">MC</span><span>MindCare</span></button>
+        <button className="wordmark" onClick={() => { setMode('welcome'); setActiveView('home') }}><img className="wordmark-mark" src={logo} alt="" /><span>MindCare</span></button>
         <div className="topbar-meta" aria-live="polite"><span className={`status-dot ${isOnline ? '' : 'offline'}`} /><span>{connectionMessage || (isOnline ? 'Online · saved only in this browser' : 'Offline · saved only in this browser')}</span><VoiceNavigator language={dateLanguage} isCaregiver={isCaregiver} onCommand={handleVoiceCommand} /><select className="language-select" value={dateLanguage} onChange={(event) => setDateLanguage(event.target.value)} aria-label="Choose date format language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Assamese</option></select><button className="switch-link" onClick={() => enterMode(isCaregiver ? 'elderly' : 'caregiver')}>Switch to {isCaregiver ? 'elderly view' : 'caregiver view'}</button></div>
       </header>
       <div className="app-layout">

@@ -9,8 +9,8 @@
 button { font: inherit; cursor: pointer; }
 .welcome-shell { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); background: var(--paper); }
 .welcome-panel { display: flex; flex-direction: column; justify-content: center; max-width: 680px; padding: 72px clamp(28px, 8vw, 120px); }
-.brand-mark, .wordmark-mark { display: grid; place-items: center; color: var(--white); background: var(--sage-dark); font-weight: 700; letter-spacing: .04em; }
-.brand-mark { width: 54px; height: 54px; border-radius: 18px 18px 18px 4px; margin-bottom: 62px; }
+.brand-mark, .wordmark-mark { display: block; object-fit: cover; border-radius: 18px 18px 18px 4px; }
+.brand-mark { width: 54px; height: 54px; margin-bottom: 62px; }
 .eyebrow, .banner-kicker, .card-label, .nav-label, .aside-kicker { margin: 0; color: var(--sage); font-size: .75rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .welcome-panel h1 { margin: 8px 0 18px; color: var(--ink); font-family: Georgia, serif; font-size: clamp(3.5rem, 7vw, 6.6rem); font-weight: 400; line-height: .95; }
 .welcome-copy { max-width: 500px; color: var(--muted); font-size: 1.15rem; }.entry-actions { display: grid; gap: 14px; max-width: 500px; margin-top: 46px; }
