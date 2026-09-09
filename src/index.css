@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Elderly-friendly High Contrast & Font-size classes */
+.high-contrast {
+  background-color: #0b0f19 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast .bg-white {
+  background-color: #1a2234 !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.high-contrast .text-slate-600,
+.high-contrast .text-slate-500,
+.high-contrast .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.high-contrast .text-slate-900,
+.high-contrast .text-slate-800 {
+  color: #ffffff !important;
+}
+
+.high-contrast .bg-slate-50,
+.high-contrast .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+
+.text-size-large {
+  font-size: 1.18rem;
+}
+
+.text-size-large h1 {
+  font-size: 2.75rem !important;
+}
+
+.text-size-large h2 {
+  font-size: 2.25rem !important;
+}
+
+.text-size-large button {
+  font-size: 1.25rem !important;
+}
+
+/* Pulsing audio wave animation for voice assistant */
+@keyframes pulseWave {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1.2);
+  }
+}
+
+.wave-bar {
+  animation: pulseWave 1.2s ease-in-out infinite;
+}
+.wave-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.wave-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.wave-bar:nth-child(4) {
+  animation-delay: 0.1s;
+}
+.wave-bar:nth-child(5) {
+  animation-delay: 0.3s;
+}
