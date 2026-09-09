@@ -1,0 +1,4 @@
+accuracy,responseTime,mistakes,hintsUsed,completion,previousScore,recentAverage,currentDifficulty,nextDifficulty
+0.85,12,1,0,1,78,76,1,2
+0.62,21,3,1,1,64,65,2,2
+0.42,29,5,2,1,51,55,2,1

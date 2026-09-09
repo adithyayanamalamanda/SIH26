@@ -1,0 +1,21 @@
+:root {
+  --ink: #24312d;
+  --muted: #66736d;
+  --paper: #f5f3ed;
+  --white: #fffefa;
+  --line: #d9ded7;
+  --sage: #55796b;
+  --sage-dark: #365b50;
+  --sage-soft: #dfe9df;
+  --coral: #c9674b;
+  --yellow: #e9c66b;
+  font: 17px/1.5 'Trebuchet MS', 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { margin: 0; min-width: 320px; background: var(--paper); }
+#root { min-height: 100svh; }
