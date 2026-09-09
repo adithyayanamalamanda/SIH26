@@ -2,16 +2,37 @@ import { useEffect, useState } from 'react'
 import AttentionGame from './components/AttentionGame'
 import MemoryGame from './components/MemoryGame'
 import { CaregiverProgress, ProgressView, RemindersView, VoiceView } from './components/PrototypePanels'
+import { saveSyncStatus } from './lib/storage'
 import './App.css'
+
+const translations = {
+  English: { home: 'Home', games: 'Games', reminders: 'Reminders', progress: 'Progress', voice: 'Voice Assistant', start: 'Start memory game' },
+  Hindi: { home: 'होम', games: 'खेल', reminders: 'रिमाइंडर', progress: 'प्रगति', voice: 'आवाज़ सहायक', start: 'मेमोरी गेम शुरू करें' },
+  Telugu: { home: 'హోమ్', games: 'ఆటలు', reminders: 'రిమైండర్లు', progress: 'పురోగతి', voice: 'వాయిస్ సహాయకుడు', start: 'మెమరీ గేమ్ ప్రారంభించండి' },
+  Assamese: { home: 'হোম', games: 'খেল', reminders: 'স্মাৰক', progress: 'অগ্ৰগতি', voice: 'ভইচ সহায়ক', start: 'মেমৰি গেম আৰম্ভ কৰক' },
+}
 
 function App() {
   const [mode, setMode] = useState('welcome')
   const [activeView, setActiveView] = useState('home')
   const [language, setLanguage] = useState('English')
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [syncMessage, setSyncMessage] = useState('')
+  const copy = translations[language]
 
   useEffect(() => {
-    const updateStatus = () => setIsOnline(navigator.onLine)
+    const updateStatus = () => {
+      const online = navigator.onLine
+      setIsOnline(online)
+      if (online) {
+        saveSyncStatus('synced')
+        setSyncMessage('Data synchronized.')
+        window.setTimeout(() => setSyncMessage(''), 3000)
+      } else {
+        saveSyncStatus('pending')
+        setSyncMessage('Offline data will sync when you reconnect.')
+      }
+    }
     window.addEventListener('online', updateStatus)
     window.addEventListener('offline', updateStatus)
     return () => {
@@ -53,22 +74,25 @@ function App() {
   }
 
   const isCaregiver = mode === 'caregiver'
-  const navItems = isCaregiver ? ['Dashboard', 'Patient Progress', 'Alerts', 'Reminders'] : ['Home', 'Games', 'Reminders', 'Progress', 'Voice Assistant']
+  const navItems = isCaregiver ? ['Dashboard', 'Patient Progress', 'Alerts', copy.reminders] : [copy.home, copy.games, copy.reminders, copy.progress, copy.voice]
+  const viewForItem = { [copy.home]: 'home', [copy.games]: 'games', [copy.reminders]: 'reminders', [copy.progress]: 'progress', [copy.voice]: 'voice assistant' }
+  const isSubView = activeView !== 'home' && activeView !== 'dashboard'
 
   return (
     <main className="app-shell">
       <header className="topbar">
         <button className="wordmark" onClick={() => { setMode('welcome'); setActiveView('home') }}><span className="wordmark-mark">MC</span><span>MindCare</span></button>
-        <div className="topbar-meta"><span className={`status-dot ${isOnline ? '' : 'offline'}`} /><span>{isOnline ? 'Online · saved on this device' : 'Offline · saved locally'}</span><select className="language-select" value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Choose language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Assamese</option></select><button className="switch-link" onClick={() => setMode(isCaregiver ? 'elderly' : 'caregiver')}>Switch to {isCaregiver ? 'elderly view' : 'caregiver view'}</button></div>
+        <div className="topbar-meta"><span className={`status-dot ${isOnline ? '' : 'offline'}`} /><span>{syncMessage || (isOnline ? 'Online · saved on this device' : 'Offline · saved locally')}</span><select className="language-select" value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Choose language"><option>English</option><option>Hindi</option><option>Telugu</option><option>Assamese</option></select><button className="switch-link" onClick={() => setMode(isCaregiver ? 'elderly' : 'caregiver')}>Switch to {isCaregiver ? 'elderly view' : 'caregiver view'}</button></div>
       </header>
       <div className="app-layout">
         <nav className="side-nav" aria-label="Main navigation">
           <p className="nav-label">{isCaregiver ? 'Care team' : 'My day'}</p>
-          {navItems.map((item, index) => <button className={`nav-item ${activeView === item.toLowerCase() ? 'active' : ''}`} key={item} onClick={() => setActiveView(item.toLowerCase())}><span className="nav-icon" aria-hidden="true">{['⌂', '◈', '◷', '▦', '◌'][index]}</span>{item}</button>)}
+          {navItems.map((item, index) => <button className={`nav-item ${activeView === (viewForItem[item] || item.toLowerCase()) ? 'active' : ''}`} key={item} onClick={() => setActiveView(viewForItem[item] || item.toLowerCase())}><span className="nav-icon" aria-hidden="true">{['⌂', '◈', '◷', '▦', '◌'][index]}</span>{item}</button>)}
           <div className="nav-footer"><p>Need a little help?</p><button className="help-button">Speak with MindCare</button></div>
         </nav>
         <section className="content-area">
-          <div className="content-heading"><div><p className="eyebrow">Wednesday, September 9, 2026</p><h1>{isCaregiver ? 'Good afternoon, caregiver' : 'Good morning, Ramesh'}</h1></div><div className="profile-chip"><span>RK</span><strong>{isCaregiver ? 'Caregiver' : 'Ramesh'}</strong></div></div>
+          <div className="content-heading"><div><p className="eyebrow">{new Intl.DateTimeFormat(language === 'English' ? 'en-IN' : language === 'Hindi' ? 'hi-IN' : language === 'Telugu' ? 'te-IN' : 'as-IN', { dateStyle: 'full' }).format(new Date())}</p><h1>{isCaregiver ? 'Good afternoon, caregiver' : 'Good morning, Ramesh'}</h1></div><div className="profile-chip"><span>RK</span><strong>{isCaregiver ? 'Caregiver' : 'Ramesh'}</strong></div></div>
+          {isSubView && <button className="back-button" onClick={() => setActiveView(isCaregiver ? 'dashboard' : 'home')}>← Back home</button>}
           <div className="hero-banner"><div><p className="banner-kicker">A gentle start</p><h2>{isCaregiver ? 'Ramesh has completed 4 of 5 activities.' : 'Ready for today&apos;s activities?'}</h2><p>{isCaregiver ? 'His recent practice is moving in a positive direction.' : 'Choose one small activity. You can take your time.'}</p></div><span className="banner-mark" aria-hidden="true">✦</span></div>
           {activeView === 'games' ? <MemoryGame /> : activeView === 'attention' ? <AttentionGame /> : activeView === 'reminders' ? <RemindersView /> : activeView === 'progress' ? <ProgressView /> : activeView === 'voice assistant' ? <VoiceView onStartGame={() => setActiveView('games')} onShowProgress={() => setActiveView('progress')} /> : isCaregiver && (activeView === 'patient progress' || activeView === 'alerts') ? <CaregiverProgress /> : isCaregiver ? <div className="dashboard-grid"><article className="info-card large-card"><p className="card-label">Patient overview</p><h3>Ramesh Kumar</h3><p>Age 68 · Last active today</p><button className="text-action" onClick={() => setActiveView('patient progress')}>View patient progress <span>→</span></button></article><article className="info-card"><p className="card-label">Today&apos;s activity</p><strong className="metric">4<span>/5</span></strong><p>activities completed</p></article><article className="info-card"><p className="card-label">Game performance</p><strong className="metric">78<span>/100</span></strong><p className="positive-copy">Improving this week</p></article></div> : <><div className="action-grid"><button className="feature-card memory-card" onClick={() => setActiveView('games')}><span className="feature-icon" aria-hidden="true">✦</span><span><small>5 minutes</small><strong>Memory Training</strong><em>Remember familiar objects</em></span><b>→</b></button><button className="feature-card attention-card" onClick={() => setActiveView('attention')}><span className="feature-icon" aria-hidden="true">●</span><span><small>3 minutes</small><strong>Attention Training</strong><em>Notice what changes</em></span><b>→</b></button></div><div className="lower-grid"><article className="info-card"><p className="card-label">Today&apos;s reminders</p><h3>One thing at a time</h3><p>Medicine at 1:00 PM · Water at 2:00 PM</p><button className="text-action" onClick={() => setActiveView('reminders')}>View reminders <span>→</span></button></article><article className="info-card progress-card"><p className="card-label">My progress</p><strong className="metric">3<span> days</span></strong><p>practice streak</p><div className="progress-line"><span /></div></article></div></>}
         </section>

@@ -47,7 +47,7 @@ function MemoryGame() {
     const correct = selected.filter((id) => objects.some((item) => item.id === id)).length
     const incorrect = selected.filter((id) => distractors.some((item) => item.id === id)).length
     const responseTime = Math.max(1, Math.round((Date.now() - startedAt) / 1000))
-    const performance = calculatePerformance({ correct, total: objects.length, responseTime })
+    const performance = calculatePerformance({ correct, incorrect, total: objects.length, responseTime })
     const adaptation = recommendDifficulty({ score: performance.score })
     saveGameSession({
       patientId: 'P001', gameType: 'memory_recall', difficultyLevel: 1,
